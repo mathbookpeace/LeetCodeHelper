@@ -1,23 +1,38 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+import { fileURLToPath } from 'node:url';
 import * as vscode from 'vscode';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
+	
 	console.log('Congratulations, your extension "leetcodehelper" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('leetcodehelper.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from LeetCodeHelper!');
+	
+	let disposable = vscode.commands.registerCommand('leetcodehelper.format_input', async () => {
+		let e = vscode.window.activeTextEditor;
+		if (!e) return;
+		
+		let replace = async function (e: vscode.TextEditor, to: string) {
+			await e.edit(async function (builder) {
+				let p1 = e.document.positionAt(0);
+				let p2 = e.document.positionAt(e.document.getText().length);
+				if (!p1 || !p2) return;
+				
+				let range = new vscode.Range(p1, p2);
+				await builder.replace(range, to);
+			});
+		}
+		
+		let text = e.document.getText();
+		let new_text = '';
+		for (let i = 0; i < text.length; ++i) {
+			if (text[i] == '[') {
+				new_text += '{';
+			} else if (text[i] == ']') {
+				new_text += '}';
+			} else {
+				new_text += text[i];
+			}
+		}
+		replace(e, new_text);
+		vscode.window.showInformationMessage('Formatted!!');
 	});
 
 	context.subscriptions.push(disposable);
