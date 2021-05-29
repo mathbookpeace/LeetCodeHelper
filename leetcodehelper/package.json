@@ -2,7 +2,7 @@
   "name": "leetcodehelpercpp",
   "displayName": "LeetCodeHelper for C++",
   "description": "Helper",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "mathbookpeace",
   "repository": {
     "url": "https://github.com/mathbookpeace/LeetCodeHelper"
@@ -14,7 +14,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:leetcodehelper.format_input"
+    "onCommand:leetcodehelper.format_input",
+    "onCommand:leetcodehelper.reset"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -22,6 +23,10 @@
       {
         "command": "leetcodehelper.format_input",
         "title": "lch fmt"
+      },
+      {
+        "command": "leetcodehelper.reset",
+        "title": "lch reset"
       }
     ]
   },

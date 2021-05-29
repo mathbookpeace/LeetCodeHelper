@@ -47,7 +47,39 @@ function activate(context) {
         replace(e, new_text);
         vscode.window.showInformationMessage('Formatted!!');
     }));
+    let disposable2 = vscode.commands.registerCommand('leetcodehelper.reset', () => __awaiter(this, void 0, void 0, function* () {
+        let e = vscode.window.activeTextEditor;
+        if (!e)
+            return;
+        let path = e.document.uri.path + ".template";
+        let uri = vscode.Uri.file(path);
+        try {
+            yield vscode.workspace.fs.stat(uri);
+        }
+        catch (_a) {
+            vscode.window.showInformationMessage('template file does not exist!');
+            return;
+        }
+        let file = yield vscode.workspace.openTextDocument(uri);
+        let replace = function (e, to) {
+            return __awaiter(this, void 0, void 0, function* () {
+                yield e.edit(function (builder) {
+                    return __awaiter(this, void 0, void 0, function* () {
+                        let p1 = e.document.positionAt(0);
+                        let p2 = e.document.positionAt(e.document.getText().length);
+                        if (!p1 || !p2)
+                            return;
+                        let range = new vscode.Range(p1, p2);
+                        yield builder.replace(range, to);
+                    });
+                });
+            });
+        };
+        let text = file.getText();
+        replace(e, text);
+    }));
     context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable2);
 }
 exports.activate = activate;
 // this method is called when your extension is deactivated
