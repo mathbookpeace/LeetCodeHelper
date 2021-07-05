@@ -14,6 +14,20 @@ const vscode = require("vscode");
 function activate(context) {
     console.log('Congratulations, your extension "leetcodehelper" is now active!');
     let disposable = vscode.commands.registerCommand('leetcodehelper.format_input', () => __awaiter(this, void 0, void 0, function* () {
+        yield cmdFormatInput();
+    }));
+    let disposable2 = vscode.commands.registerCommand('leetcodehelper.reset', () => __awaiter(this, void 0, void 0, function* () {
+        yield cmdReset();
+    }));
+    context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable2);
+}
+exports.activate = activate;
+// this method is called when your extension is deactivated
+function deactivate() { }
+exports.deactivate = deactivate;
+function cmdFormatInput() {
+    return __awaiter(this, void 0, void 0, function* () {
         let e = vscode.window.activeTextEditor;
         if (!e) {
             return;
@@ -47,8 +61,10 @@ function activate(context) {
             }
         }
         replace(e, newText);
-    }));
-    let disposable2 = vscode.commands.registerCommand('leetcodehelper.reset', () => __awaiter(this, void 0, void 0, function* () {
+    });
+}
+function cmdReset() {
+    return __awaiter(this, void 0, void 0, function* () {
         let e = vscode.window.activeTextEditor;
         if (!e) {
             return;
@@ -80,30 +96,31 @@ function activate(context) {
         };
         let text = file.getText();
         replace(e, text);
-        if (file.lineCount > 0) {
-            let firstLine = file.lineAt(0).text;
-            let lineNumPos = firstLine.search("line=");
-            if (lineNumPos !== -1) {
-                let lineNum = 0;
-                for (let i = lineNumPos + 5; i < firstLine.length; ++i) {
-                    let ch = firstLine[i];
-                    if (ch < '0' || ch > '9') {
-                        break;
-                    }
-                    lineNum = lineNum * 10 + parseInt(ch);
-                }
-                moveCursorToLineEnd(e, lineNum);
-            }
+        let lineNum = parseLineNumberFromFirstLine(file);
+        if (lineNum !== -1) {
+            moveCursorToLineEnd(e, lineNum);
         }
-        console.log("helloo");
-    }));
-    context.subscriptions.push(disposable);
-    context.subscriptions.push(disposable2);
+    });
 }
-exports.activate = activate;
-// this method is called when your extension is deactivated
-function deactivate() { }
-exports.deactivate = deactivate;
+function parseLineNumberFromFirstLine(file) {
+    if (file.lineCount === 0) {
+        return -1;
+    }
+    let firstLine = file.lineAt(0).text;
+    let lineNumPos = firstLine.search("line=");
+    if (lineNumPos === -1) {
+        return -1;
+    }
+    let lineNum = 0;
+    for (let i = lineNumPos + 5; i < firstLine.length; ++i) {
+        let ch = firstLine[i];
+        if (ch < '0' || ch > '9') {
+            break;
+        }
+        lineNum = lineNum * 10 + parseInt(ch);
+    }
+    return lineNum;
+}
 function moveCursorToLineEnd(edi, line) {
     let number = Math.max(0, Math.min(line - 1, edi.document.lineCount - 1));
     let range = edi.document.lineAt(number).range;
