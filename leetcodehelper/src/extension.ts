@@ -7,38 +7,37 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	let disposable = vscode.commands.registerCommand('leetcodehelper.format_input', async () => {
 		let e = vscode.window.activeTextEditor;
-		if (!e) return;
+		if (!e) { return; }
 		
 		let replace = async function (e: vscode.TextEditor, to: string) {
 			await e.edit(async function (builder) {
 				let p1 = e.document.positionAt(0);
 				let p2 = e.document.positionAt(e.document.getText().length);
-				if (!p1 || !p2) return;
+				if (!p1 || !p2) { return; }
 				
 				let range = new vscode.Range(p1, p2);
 				await builder.replace(range, to);
 			});
-		}
+		};
 		
 		let text = e.document.getText();
-		let new_text = '';
+		let newText = '';
 		for (let i = 0; i < text.length; ++i) {
-			if (text[i] == '[') {
-				new_text += '{';
-			} else if (text[i] == ']') {
-				new_text += '}';
+			if (text[i] === '[') {
+				newText += '{';
+			} else if (text[i] === ']') {
+				newText += '}';
 			} else {
-				new_text += text[i];
+				newText += text[i];
 			}
 		}
-		replace(e, new_text);
-		vscode.window.showInformationMessage('Formatted!!');
+		replace(e, newText);
 	});
 	
 	
 	let disposable2 = vscode.commands.registerCommand('leetcodehelper.reset', async () => {
 		let e = vscode.window.activeTextEditor;
-		if (!e) return;
+		if (!e) { return; }
 		
 		let path = e.document.uri.path + ".template";
 		let uri = vscode.Uri.file(path);
@@ -55,15 +54,30 @@ export function activate(context: vscode.ExtensionContext) {
 			await e.edit(async function (builder) {
 				let p1 = e.document.positionAt(0);
 				let p2 = e.document.positionAt(e.document.getText().length);
-				if (!p1 || !p2) return;
+				if (!p1 || !p2) { return; }
 				
 				let range = new vscode.Range(p1, p2);
 				await builder.replace(range, to);
 			});
-		}
+		};
 		
 		let text = file.getText();
 		replace(e, text);
+		
+		if (file.lineCount > 0) {
+			let firstLine = file.lineAt(0).text;
+			let lineNumPos = firstLine.search("line=");
+			if (lineNumPos !== -1) {
+				let lineNum = 0;
+				for (let i = lineNumPos + 5; i < firstLine.length; ++i) {
+					let ch = firstLine[i];
+					if (ch < '0' || ch > '9') { break; }
+					lineNum = lineNum * 10 + parseInt(ch);
+				}
+				moveCursorToLineEnd(e, lineNum);
+			}
+		}
+		console.log("helloo");
 	});
 	
 	context.subscriptions.push(disposable);
@@ -72,3 +86,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
+
+
+
+function moveCursorToLineEnd(edi: vscode.TextEditor, line: number)
+{
+	let number = Math.max(0, Math.min(line - 1, edi.document.lineCount-1));
+	let range = edi.document.lineAt(number).range;
+	edi.selection = new vscode.Selection(range.end, range.end);
+	edi.revealRange(range);
+}
