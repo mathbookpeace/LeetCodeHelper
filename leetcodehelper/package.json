@@ -2,7 +2,7 @@
   "name": "leetcodehelpercpp",
   "displayName": "LeetCodeHelper for C++",
   "description": "Helper",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "mathbookpeace",
   "repository": {
     "url": "https://github.com/mathbookpeace/LeetCodeHelper"
