@@ -21,3 +21,15 @@ This extension will move your cursor to the line, after reset your file.
 For example,
 There is a comment "// line=87" at the first line,
 after reseting the file, your cursor will move to line 87.
+
+
+## lch backup
+This command will backup active document to a file.  
+You will need to input a file name after you trigger this command.  
+The extension will replace the file you specified with active file.  
+
+
+## lch restore
+This command will restore active document from a file.  
+You will need to input a file name after you trigger this command.  
+The extension will replace active file with the file you specified.  

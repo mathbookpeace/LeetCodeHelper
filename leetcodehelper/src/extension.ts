@@ -1,20 +1,25 @@
-import { fileURLToPath } from 'node:url';
+import { TextEncoder } from 'util';
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
 	
 	console.log('Congratulations, your extension "leetcodehelper" is now active!');
 	
-	let disposable = vscode.commands.registerCommand('leetcodehelper.format_input', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.format_input', async () => {
 		await cmdFormatInput();
-	});
+	}));
 	
-	let disposable2 = vscode.commands.registerCommand('leetcodehelper.reset', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.reset', async () => {
 		await cmdReset();
-	});
+	}));
 	
-	context.subscriptions.push(disposable);
-	context.subscriptions.push(disposable2);
+	context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.backup', async () => {
+		await cmdBackup();
+	}));
+	
+	context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.restore', async () => {
+		await cmdRestore();
+	}));
 }
 
 // this method is called when your extension is deactivated
@@ -25,17 +30,6 @@ async function cmdFormatInput()
 {
 	let e = vscode.window.activeTextEditor;
 	if (!e) { return; }
-	
-	let replace = async function (e: vscode.TextEditor, to: string) {
-		await e.edit(async function (builder) {
-			let p1 = e.document.positionAt(0);
-			let p2 = e.document.positionAt(e.document.getText().length);
-			if (!p1 || !p2) { return; }
-			
-			let range = new vscode.Range(p1, p2);
-			await builder.replace(range, to);
-		});
-	};
 	
 	let text = e.document.getText();
 	let newText = '';
@@ -48,45 +42,81 @@ async function cmdFormatInput()
 			newText += text[i];
 		}
 	}
-	replace(e, newText);
+	replaceActiveFile(e, newText);
 }
 
 
 async function cmdReset()
 {
-	let e = vscode.window.activeTextEditor;
-	if (!e) { return; }
+	let edi = vscode.window.activeTextEditor;
+	if (!edi) { return; }
 	
-	let path = e.document.uri.path + ".template";
+	await replaceActiveFileWithAnother(edi, "template");
+}
+
+
+async function cmdBackup()
+{
+	let options: vscode.InputBoxOptions = {
+		placeHolder: "Name"
+	};
+	vscode.window.showInputBox(options).then(async name => {
+		if (!name) { return; }
+		let edi = vscode.window.activeTextEditor;
+		if (!edi) { return; }
+		
+		await replaceAnotherFileWithActive(edi, name);
+	});
+}
+
+
+async function cmdRestore()
+{
+	let options: vscode.InputBoxOptions = {
+		placeHolder: "Name"
+	};
+	vscode.window.showInputBox(options).then(async name => {
+		if (!name) { return; }
+		let edi = vscode.window.activeTextEditor;
+		if (!edi) { return; }
+		
+		await replaceActiveFileWithAnother(edi, name);
+	});
+}
+
+
+async function replaceActiveFileWithAnother(edi: vscode.TextEditor, another: string)
+{
+	let path = edi.document.uri.path + "." + another;
 	let uri = vscode.Uri.file(path);
 	
 	try {
 		await vscode.workspace.fs.stat(uri);
 	} catch {
-		vscode.window.showInformationMessage('template file does not exist!');
+		vscode.window.showInformationMessage(`${another} file does not exist!`);
 		return;
 	}
 	let file = await vscode.workspace.openTextDocument(uri);
 	
-	let replace = async function (e: vscode.TextEditor, to: string) {
-		await e.edit(async function (builder) {
-			let p1 = e.document.positionAt(0);
-			let p2 = e.document.positionAt(e.document.getText().length);
-			if (!p1 || !p2) { return; }
-			
-			let range = new vscode.Range(p1, p2);
-			await builder.replace(range, to);
-		});
-	};
-	
 	let text = file.getText();
-	replace(e, text);
-	
+	replaceActiveFile(edi, text);
 	
 	let lineNum = parseLineNumberFromFirstLine(file);
 	if (lineNum !== -1) {
-		moveCursorToLineEnd(e, lineNum);
+		moveCursorToLineEnd(edi, lineNum);
 	}
+}
+
+
+async function replaceAnotherFileWithActive(edi: vscode.TextEditor, another: string)
+{
+	let path = edi.document.uri.path + "." + another;
+	let uri = vscode.Uri.file(path);
+	
+	let text = edi.document.getText();
+	let enc = new TextEncoder;
+	
+	await vscode.workspace.fs.writeFile(uri, enc.encode(text));
 }
 
 
@@ -114,4 +144,17 @@ function moveCursorToLineEnd(edi: vscode.TextEditor, line: number)
 	let range = edi.document.lineAt(number).range;
 	edi.selection = new vscode.Selection(range.end, range.end);
 	edi.revealRange(range);
+}
+
+
+async function replaceActiveFile(edi: vscode.TextEditor, to: string)
+{
+	await edi.edit(async function (builder) {
+		let p1 = edi.document.positionAt(0);
+		let p2 = edi.document.positionAt(edi.document.getText().length);
+		if (!p1 || !p2) { return; }
+		
+		let range = new vscode.Range(p1, p2);
+		await builder.replace(range, to);
+	});
 }
