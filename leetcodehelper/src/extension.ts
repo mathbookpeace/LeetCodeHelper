@@ -20,6 +20,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.restore', async () => {
 		await cmdRestore();
 	}));
+	
+	context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.copy', async () => {
+		await cmdCopy();
+	}));
 }
 
 // this method is called when your extension is deactivated
@@ -84,6 +88,23 @@ async function cmdRestore()
 	});
 }
 
+async function cmdCopy()
+{
+	let edi = vscode.window.activeTextEditor;
+	if (!edi) { return; }
+	
+	let start = parseParameterFromFirstLine("copy_start", edi.document);
+	if (start === -1) { start = 1; }
+	let end = parseParameterFromFirstLine("copy_end", edi.document);
+	if (end === -1) { edi.document.lineCount; }
+	
+	
+	let range = new vscode.Range(start, 0, end, edi.document.lineAt(end).text.length);
+	let text = edi.document.getText(range);
+	
+	await vscode.env.clipboard.writeText(text);
+}
+
 
 async function replaceActiveFileWithAnother(edi: vscode.TextEditor, another: string)
 {
@@ -101,7 +122,7 @@ async function replaceActiveFileWithAnother(edi: vscode.TextEditor, another: str
 	let text = file.getText();
 	replaceActiveFile(edi, text);
 	
-	let lineNum = parseLineNumberFromFirstLine(file);
+	let lineNum = parseParameterFromFirstLine("line", file);
 	if (lineNum !== -1) {
 		moveCursorToLineEnd(edi, lineNum);
 	}
@@ -120,21 +141,21 @@ async function replaceAnotherFileWithActive(edi: vscode.TextEditor, another: str
 }
 
 
-function parseLineNumberFromFirstLine(file: vscode.TextDocument) : number
+function parseParameterFromFirstLine(key: string, file: vscode.TextDocument) : number
 {
 	if (file.lineCount === 0) { return -1; }
 	let firstLine = file.lineAt(0).text;
 	
-	let lineNumPos = firstLine.search("line=");
-	if (lineNumPos === -1) { return -1; }
+	let keyPos = firstLine.search(key + "=");
+	if (keyPos === -1) { return -1; }
 	
-	let lineNum = 0;
-	for (let i = lineNumPos + 5; i < firstLine.length; ++i) {
+	let val = 0;
+	for (let i = keyPos + key.length + 1; i < firstLine.length; ++i) {
 		let ch = firstLine[i];
 		if (ch < '0' || ch > '9') { break; }
-		lineNum = lineNum * 10 + parseInt(ch);
+		val = val * 10 + parseInt(ch);
 	}
-	return lineNum;
+	return val;
 }
 
 
