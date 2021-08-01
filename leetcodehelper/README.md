@@ -33,3 +33,36 @@ The extension will replace the file you specified with active file.
 This command will restore active document from a file.  
 You will need to input a file name after you trigger this command.  
 The extension will replace active file with the file you specified.  
+
+## lch copy
+Add a single line comment that contains "copy_start=number copy_end=number"  
+at the first line of your file.  
+Then use this command to copy the content between the start line and end line  
+
+For example,  
+If you have  
+``` C++
+// copy_start=5 copy_end=10  
+```
+in you first line,  
+this command will copy all the content between line 5 and 10 (inclusive)  
+
+## lch copy between symbol
+Add a single line comment that contains "copy_start_symbol=string1 copy_end_symbol=string2"  
+at the first line of your file.  
+Then use this command to copy the content between the start symbol and end symbol.  
+
+For example,  
+If you have  
+``` C++
+// copy_start_symbol=hello copy_start_symbol=world  
+```
+in your first line,  
+and you have  
+``` C++
+// hello  
+... some code here ...  
+// world  
+```
+in your code,   
+this command will copy all the content between // hello and // world (not inclusive)

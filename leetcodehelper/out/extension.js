@@ -29,6 +29,9 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.copy', () => __awaiter(this, void 0, void 0, function* () {
         yield cmdCopy();
     })));
+    context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.copy_between_symbol', () => __awaiter(this, void 0, void 0, function* () {
+        yield cmdCopyBetweenSymbol();
+    })));
 }
 exports.activate = activate;
 // this method is called when your extension is deactivated
@@ -105,16 +108,45 @@ function cmdCopy() {
         if (!edi) {
             return;
         }
-        let start = parseParameterFromFirstLine("copy_start", edi.document);
+        let start = parseNumberFromFirstLine("copy_start", edi.document);
         if (start === -1) {
             start = 1;
         }
-        let end = parseParameterFromFirstLine("copy_end", edi.document);
+        let end = parseNumberFromFirstLine("copy_end", edi.document);
         if (end === -1) {
             end = edi.document.lineCount;
         }
-        start = Math.max(0, start - 1);
-        end = Math.min(edi.document.lineCount - 1, end - 1);
+        start = Math.min(edi.document.lineCount - 1, Math.max(0, start - 1));
+        end = Math.max(start, Math.min(edi.document.lineCount - 1, end - 1));
+        let range = new vscode.Range(start, 0, end, edi.document.lineAt(end).text.length);
+        let text = edi.document.getText(range);
+        yield vscode.env.clipboard.writeText(text);
+    });
+}
+function cmdCopyBetweenSymbol() {
+    return __awaiter(this, void 0, void 0, function* () {
+        let edi = vscode.window.activeTextEditor;
+        if (!edi) {
+            return;
+        }
+        let start = 0;
+        let end = edi.document.lineCount - 1;
+        let start_symbol = parseStringFromFirstLine("copy_start_symbol", edi.document);
+        if (start_symbol) {
+            let ss_line = searchWord(start_symbol, edi.document, 1);
+            if (ss_line != -1) {
+                start = ss_line;
+            }
+        }
+        let end_symbol = parseStringFromFirstLine("copy_end_symbol", edi.document);
+        if (end_symbol) {
+            let es_line = searchWord(end_symbol, edi.document, start + 1);
+            if (es_line != -1) {
+                end = es_line;
+            }
+        }
+        start = Math.min(edi.document.lineCount - 1, Math.max(0, start + 1));
+        end = Math.max(start, Math.min(edi.document.lineCount - 1, end - 1));
         let range = new vscode.Range(start, 0, end, edi.document.lineAt(end).text.length);
         let text = edi.document.getText(range);
         yield vscode.env.clipboard.writeText(text);
@@ -134,7 +166,7 @@ function replaceActiveFileWithAnother(edi, another) {
         let file = yield vscode.workspace.openTextDocument(uri);
         let text = file.getText();
         replaceActiveFile(edi, text);
-        let lineNum = parseParameterFromFirstLine("line", file);
+        let lineNum = parseNumberFromFirstLine("line", file);
         if (lineNum !== -1) {
             moveCursorToLineEnd(edi, lineNum);
         }
@@ -149,7 +181,7 @@ function replaceAnotherFileWithActive(edi, another) {
         yield vscode.workspace.fs.writeFile(uri, enc.encode(text));
     });
 }
-function parseParameterFromFirstLine(key, file) {
+function parseNumberFromFirstLine(key, file) {
     if (file.lineCount === 0) {
         return -1;
     }
@@ -165,6 +197,25 @@ function parseParameterFromFirstLine(key, file) {
             break;
         }
         val = val * 10 + parseInt(ch);
+    }
+    return val;
+}
+function parseStringFromFirstLine(key, file) {
+    if (file.lineCount === 0) {
+        return undefined;
+    }
+    let firstLine = file.lineAt(0).text;
+    let keyPos = firstLine.search(key + "=");
+    if (keyPos === -1) {
+        return undefined;
+    }
+    let val = "";
+    for (let i = keyPos + key.length + 1; i < firstLine.length; ++i) {
+        let ch = firstLine[i];
+        if (ch === ' ') {
+            break;
+        }
+        val += ch;
     }
     return val;
 }
@@ -188,5 +239,12 @@ function replaceActiveFile(edi, to) {
             });
         });
     });
+}
+function searchWord(word, file, off) {
+    for (let line = Math.max(0, off); line < file.lineCount; ++line) {
+        if (file.lineAt(line).text.search(word) != -1)
+            return line;
+    }
+    return -1;
 }
 //# sourceMappingURL=extension.js.map

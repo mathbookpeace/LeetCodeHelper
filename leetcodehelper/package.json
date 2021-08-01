@@ -2,7 +2,7 @@
   "name": "leetcodehelpercpp",
   "displayName": "LeetCodeHelper for C++ (Also good for Competitive Programming)",
   "description": "Helper",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publisher": "mathbookpeace",
   "repository": {
     "url": "https://github.com/mathbookpeace/LeetCodeHelper"
@@ -18,7 +18,8 @@
     "onCommand:leetcodehelper.reset",
     "onCommand:leetcodehelper.backup",
     "onCommand:leetcodehelper.restore",
-    "onCommand:leetcodehelper.copy"
+    "onCommand:leetcodehelper.copy",
+    "onCommand:leetcodehelper.copy_between_symbol"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -42,6 +43,10 @@
       {
         "command": "leetcodehelper.copy",
         "title": "lch copy"
+      },
+      {
+        "command": "leetcodehelper.copy_between_symbol",
+        "title": "lch copy between symbol"
       }
     ]
   },
