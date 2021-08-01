@@ -96,12 +96,13 @@ async function cmdCopy()
 	let start = parseParameterFromFirstLine("copy_start", edi.document);
 	if (start === -1) { start = 1; }
 	let end = parseParameterFromFirstLine("copy_end", edi.document);
-	if (end === -1) { edi.document.lineCount; }
+	if (end === -1) { end = edi.document.lineCount; }
 	
+	start = Math.max(0, start - 1);
+	end = Math.min(edi.document.lineCount - 1, end - 1);
 	
 	let range = new vscode.Range(start, 0, end, edi.document.lineAt(end).text.length);
 	let text = edi.document.getText(range);
-	
 	await vscode.env.clipboard.writeText(text);
 }
 

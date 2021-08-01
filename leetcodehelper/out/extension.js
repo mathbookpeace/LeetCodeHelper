@@ -26,6 +26,9 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.restore', () => __awaiter(this, void 0, void 0, function* () {
         yield cmdRestore();
     })));
+    context.subscriptions.push(vscode.commands.registerCommand('leetcodehelper.copy', () => __awaiter(this, void 0, void 0, function* () {
+        yield cmdCopy();
+    })));
 }
 exports.activate = activate;
 // this method is called when your extension is deactivated
@@ -96,6 +99,27 @@ function cmdRestore() {
         }));
     });
 }
+function cmdCopy() {
+    return __awaiter(this, void 0, void 0, function* () {
+        let edi = vscode.window.activeTextEditor;
+        if (!edi) {
+            return;
+        }
+        let start = parseParameterFromFirstLine("copy_start", edi.document);
+        if (start === -1) {
+            start = 1;
+        }
+        let end = parseParameterFromFirstLine("copy_end", edi.document);
+        if (end === -1) {
+            end = edi.document.lineCount;
+        }
+        start = Math.max(0, start - 1);
+        end = Math.min(edi.document.lineCount - 1, end - 1);
+        let range = new vscode.Range(start, 0, end, edi.document.lineAt(end).text.length);
+        let text = edi.document.getText(range);
+        yield vscode.env.clipboard.writeText(text);
+    });
+}
 function replaceActiveFileWithAnother(edi, another) {
     return __awaiter(this, void 0, void 0, function* () {
         let path = edi.document.uri.path + "." + another;
@@ -110,7 +134,7 @@ function replaceActiveFileWithAnother(edi, another) {
         let file = yield vscode.workspace.openTextDocument(uri);
         let text = file.getText();
         replaceActiveFile(edi, text);
-        let lineNum = parseLineNumberFromFirstLine(file);
+        let lineNum = parseParameterFromFirstLine("line", file);
         if (lineNum !== -1) {
             moveCursorToLineEnd(edi, lineNum);
         }
@@ -125,24 +149,24 @@ function replaceAnotherFileWithActive(edi, another) {
         yield vscode.workspace.fs.writeFile(uri, enc.encode(text));
     });
 }
-function parseLineNumberFromFirstLine(file) {
+function parseParameterFromFirstLine(key, file) {
     if (file.lineCount === 0) {
         return -1;
     }
     let firstLine = file.lineAt(0).text;
-    let lineNumPos = firstLine.search("line=");
-    if (lineNumPos === -1) {
+    let keyPos = firstLine.search(key + "=");
+    if (keyPos === -1) {
         return -1;
     }
-    let lineNum = 0;
-    for (let i = lineNumPos + 5; i < firstLine.length; ++i) {
+    let val = 0;
+    for (let i = keyPos + key.length + 1; i < firstLine.length; ++i) {
         let ch = firstLine[i];
         if (ch < '0' || ch > '9') {
             break;
         }
-        lineNum = lineNum * 10 + parseInt(ch);
+        val = val * 10 + parseInt(ch);
     }
-    return lineNum;
+    return val;
 }
 function moveCursorToLineEnd(edi, line) {
     let number = Math.max(0, Math.min(line - 1, edi.document.lineCount - 1));
